@@ -34,6 +34,7 @@ class App(customtkinter.CTk):
         )
         title_label.grid(row=0, column=0, columnspan=4, sticky="nsew")
 
+        # Create grid.
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
         self.columnconfigure(2, weight=1)
@@ -43,10 +44,11 @@ class App(customtkinter.CTk):
         self.rowconfigure(1, weight=5)
         self.rowconfigure(2, weight=5)
 
+        # Create buttons for apps.
         self.box1 = customtkinter.CTkButton(
             self,
             text="Calendar",
-            fg_color="Red",
+            fg_color="#5500ff",
             cursor="hand2",
             font=("TimeBurner", 20),
         )
@@ -55,7 +57,7 @@ class App(customtkinter.CTk):
         self.box2 = customtkinter.CTkButton(
             self,
             text="Music",
-            fg_color="Blue",
+            fg_color="#5500ff",
             cursor="hand2",
             font=("TimeBurner", 20),
         )
@@ -64,7 +66,7 @@ class App(customtkinter.CTk):
         self.box3 = customtkinter.CTkButton(
             self,
             text="Search",
-            fg_color="Green",
+            fg_color="#5500ff",
             cursor="hand2",
             font=("TimeBurner", 20),
         )
@@ -73,7 +75,7 @@ class App(customtkinter.CTk):
         self.box4 = customtkinter.CTkButton(
             self,
             text="News",
-            fg_color="Orange",
+            fg_color="#5500ff",
             cursor="hand2",
             font=("TimeBurner", 20),
         )
@@ -82,7 +84,7 @@ class App(customtkinter.CTk):
         self.box5 = customtkinter.CTkButton(
             self,
             text="Traffic",
-            fg_color="Purple",
+            fg_color="#5500ff",
             cursor="hand2",
             font=("TimeBurner", 20),
         )
@@ -91,7 +93,7 @@ class App(customtkinter.CTk):
         self.box6 = customtkinter.CTkButton(
             self,
             text="Shop",
-            fg_color="Yellow",
+            fg_color="#5500ff",
             cursor="hand2",
             font=("TimeBurner", 20),
         )
@@ -100,8 +102,7 @@ class App(customtkinter.CTk):
         self.box7 = customtkinter.CTkButton(
             self,
             text="Email",
-            fg_color="Pink",
-            text_color="Black",
+            fg_color="#5500ff",
             cursor="hand2",
             font=("TimeBurner", 20),
         )
@@ -110,7 +111,7 @@ class App(customtkinter.CTk):
         self.box8 = customtkinter.CTkButton(
             self,
             text="Maps",
-            fg_color="Brown",
+            fg_color="#5500ff",
             cursor="hand2",
             font=("TimeBurner", 20),
         )
