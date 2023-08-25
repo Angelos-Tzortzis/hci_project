@@ -44,7 +44,7 @@ class App(customtkinter.CTk):
         self.rowconfigure(1, weight=5)
         self.rowconfigure(2, weight=5)
 
-        # Create buttons for apps.
+        # Create buttons for each service.
         self.box1 = customtkinter.CTkButton(
             self,
             text="Calendar",
