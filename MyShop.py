@@ -18,7 +18,9 @@ class MyShop(customtkinter.CTk):
         super().__init__(master)
 
         # Configure window
-        if master is None:  # Only set title, geometry and resizable if running as a standalone window
+        if (
+            master is None
+        ):  # Only set title, geometry and resizable if running as a standalone window
             self.title("MY Shop")
             self.geometry(f"{700}x{700}")
             self.resizable(False, False)
