@@ -1,3 +1,5 @@
+import customtkinter
+from PIL import Image, ImageTk
 import os
 import pygame
 import mutagen.mp3
@@ -6,202 +8,190 @@ from tkinter import PhotoImage
 from typing import Union
 import customtkinter
 
-# Modes: "System" (standard), "Dark", "Light"
-customtkinter.set_appearance_mode("dark")
-# Themes: "blue" (standard), "green", "dark-blue"
-customtkinter.set_default_color_theme("blue")
-
-config = {"path": "./music"}
-
-# Initialize pygame mixer
 pygame.mixer.init()
 
 
-class MusicPlayer(customtkinter.CTkFrame):
-    def __init__(self, parent):
-        super().__init__(parent)
-        # self.geometry("400x660")
+class music(customtkinter.CTkToplevel):  # CTk για να το τρέξω έξω απο το main.py.
+    def __init__(self):
+        super().__init__()
+        self.geometry("960x480")
+        customtkinter.set_default_color_theme("blue")
+        customtkinter.set_appearance_mode("dark")
+        self.title("Music")
+        self.lift()
+        self.attributes("-topmost", True)
+        self.after_idle(self.attributes, "-topmost", False)
+        self.focus_set()
 
-        self.__play_image = PhotoImage(file="Resources-img/play-button.png")
-        self.__pause_image = PhotoImage(file="Resources-img/pause.png")
-        self.__next_image = PhotoImage(file="Resources-img/next.png")
-        self.__prev_image = PhotoImage(file="Resources-img/previous.png")
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, weight=1)
+        self.columnconfigure(2, weight=1)
 
-        self.__play_status: bool = False
-        self.__pathMp3Dict: dict = self.find_audio_files(config["path"])
-        self.__activate_now: int = 0
-        self.__position = 0
-        self.__total_length = 0
-        self.__manual_positioning = False
+        self.rowconfigure(0, weight=1)
+        self.rowconfigure(1, weight=10)
+        self.rowconfigure(2, weight=1)
+        self.rowconfigure(3, weight=1)
+        self.rowconfigure(4, weight=1)
 
-        self.__progress_bar = customtkinter.CTkSlider(
-            self, from_=0, to=1, command=self.change_position
+        self.title_label = customtkinter.CTkLabel(
+            self, text="Music", font=("TimeBurner", 30)
         )
-        self.__progress_bar.pack(fill="x", pady=10)
+        self.title_label.grid(row=0, column=0, columnspan=3, sticky="nsew")
 
-        self.__song_title_label = customtkinter.CTkLabel(
-            self, text="", font=("Gotham Circular", 20)
+        self.play_image = PhotoImage(file="play.png")
+        self.pause_image = PhotoImage(file="pause.png")
+        self.rewind_image = PhotoImage(file="rewind.png")
+        self.fastforward_image = PhotoImage(file="fastforward.png")
+
+        self.playing = False
+        self.active_now = 0
+        self.position = 0
+        self.length = 0
+        self.manual_position = False
+        self.position = 0
+        self.total_length = 0
+
+        self.progress_bar = customtkinter.CTkSlider(self, command=self.change_position, from_=0, to=1)
+        self.progress_bar.grid(row=4, column=0, columnspan=3, sticky="nsew")
+
+        self.song_label = customtkinter.CTkLabel(
+            self, text=self.audio_files[0], font=("TimeBurner", 20)
         )
-        self.__song_title_label.pack(side="top", anchor="nw", padx=10, pady=(0, 0))
+        self.song_label.grid(row=2, column=0, columnspan=4, sticky="nsew")
 
-        customtkinter.CTkButton(
-            self, text="", command=self.prev, image=self.__prev_image
-        ).pack(side="left")
-
-        self.__play_button = customtkinter.CTkButton(
-            self, text="", command=self.play, image=self.__play_image
+        self.rewind_button = customtkinter.CTkButton(
+            self, text="",command=self.previous, fg_color="white", cursor="hand2", image=self.rewind_image
         )
-        self.__play_button.pack(padx=10, side="left")
+        self.rewind_button.grid(row=3, column=0, sticky="nsew", padx=10)
 
-        customtkinter.CTkButton(
-            self, text="", command=self.next, image=self.__next_image
-        ).pack(side="left")
-        # Adding volume slider below the progress bar
-        self.__volume_slider = customtkinter.CTkSlider(
+        self.play_button = customtkinter.CTkButton(
+            self, text="", command=self.play, fg_color="white", cursor="hand2", image=self.play_image
+        )
+        self.play_button.grid(row=3, column=1, sticky="nsew", padx=10)
+
+        self.fastforward_button = customtkinter.CTkButton(
             self,
-            from_=0,
-            to=1,
-            orientation="vertical",
-            height=55,
-            command=self.change_volume,
-            button_color="#aab0b5",
-            progress_color="#aab0b5",
+            text="",
+            command=self.next,
+            fg_color="white",
+            cursor="hand2",
+            image=self.fastforward_image,
         )
-        self.__volume_slider.pack(side="left", padx=10, pady=(0, 0))
+        self.fastforward_button.grid(row=3, column=2, sticky="nsew", padx=10)
 
-        self.__song_image = None
-        self.__song_image_label = customtkinter.CTkLabel(self, text="")
-        self.__song_image_label.pack(side="left", pady=(0, 10))
+        image = Image.open(f"{self.audio_files[0]}.jpg")
+        image = image.resize((300, 300))
+        self.song_image = ImageTk.PhotoImage(image)
+        self.song_image_label = customtkinter.CTkLabel(self, image=self.song_image, text="")
+        self.song_image_label.grid(row=1, column=0, columnspan=3, sticky="nsew")
 
-        self.update_progress()
-        self.update_image()
-        self.update_song_title()
+        
         self.check_music()
+        self.update_progress()
 
-    @staticmethod
-    def find_audio_files(directory: str) -> dict:
-        # Search for .mp3 files in the given directory
-        audio_files = {
-            os.path.splitext(file)[0]: os.path.join(directory, file)
-            for file in os.listdir(directory)
-            if file.endswith(".mp3")
-        }
-        return audio_files
+    audio_files = [
+        "Led Zeppelin - Rock and Roll.mp3",
+        "Madvillain - All Caps.mp3",
+    ]
 
-    def music_now(self, index) -> str:
-        key = list(self.__pathMp3Dict.keys())[index]
-        return self.__pathMp3Dict[key]
+    def music_now(self, index, audio_files) -> str:
+        return audio_files[index]
 
     def change_position(self, position: Union[int, str]) -> None:
-        self.__manual_positioning = True
-        self.__position = float(position)
-        song = self.music_now(self.__activate_now)
+        self.manual_position = True
+        self.position = float(position)
+        song = self.music_now(self.active_now, self.audio_files)
         pygame.mixer.music.load(song)
-        pygame.mixer.music.play(start=self.__position)
-
-    def change_volume(self, volume: float):
-        pygame.mixer.music.set_volume(volume)
+        pygame.mixer.music.play(start=self.position)
 
     def update_progress(self) -> None:
-        if self.__play_status and not self.__manual_positioning:
-            # update progress bar
+        if self.playing and not self.manual_position:
             new_time = pygame.mixer.music.get_pos() / 1000
-            self.__progress_bar.set(new_time)
-            # check if song has finished
-            if abs(self.__total_length - new_time) <= 1:
+            self.progress_bar.set(new_time)
+            if abs(self.total_length - new_time) <= 1:
                 self.next()
-        elif not self.__play_status:
-            self.__manual_positioning = False
+        elif not self.playing:
+            self.manual_position = False
         self.after(1000, self.update_progress)
 
     def check_music(self):
-        if (
-            not pygame.mixer.music.get_busy() and self.__play_status
-        ):  # Check if the music is playing and is not paused
+        if not pygame.mixer.music.get_busy() and self.playing:
             self.next()
-        self.after(
-            100, self.check_music
-        )  # If music is playing then check again after 100ms
-
+        self.after(100, self.check_music)
+    
     def play(self, index: Union[int, str] = None) -> None:
-        if self.__play_status:
+        if self.playing:
             self.pause()
             return
-        total_len_music = len(self.__pathMp3Dict)
+        total_len_music = len(self.audio_files)
         if index is None:
-            index = self.__activate_now
+            index = self.active_now
         elif index == total_len_music:
             index = 0
-        self.__play_status = True
-        song = self.music_now(index)
+        self.playing = True
+        song = self.music_now(index, self.audio_files)
         mp3 = mutagen.mp3.MP3(song)
-        self.__total_length = mp3.info.length
-        self.__progress_bar.configure(to=self.__total_length)
+        self.total_length = mp3.info.length
+        self.progress_bar.configure(to=self.total_length)
         pygame.mixer.music.load(song)
         pygame.mixer.music.play()
-        self.__play_button.configure(image=self.__pause_image, command=self.pause)
+        self.play_button.configure(image=self.pause_image, command=self.pause)
         self.update_image()
         self.update_song_title()
-
+    
     def pause(self) -> None:
-        self.__play_status = False
+        self.playing = False
         pygame.mixer.music.pause()
-        self.__play_button.configure(image=self.__play_image, command=self.unpause)
-
+        self.play_button.configure(image=self.play_image, command=self.unpause)
+    
     def unpause(self) -> None:
-        self.__play_status = True
+        self.playing = True
         pygame.mixer.music.unpause()
-        self.__play_button.configure(image=self.__pause_image, command=self.pause)
-
+        self.play_button.configure(image=self.pause_image, command=self.pause)
+    
     def next(self) -> None:
-        self.__play_status = False
+        self.playing = False
         pygame.mixer.music.stop()
-        self.__activate_now += 1
-        if self.__activate_now >= len(self.__pathMp3Dict):
-            self.__activate_now = 0
-        self.__position = 0  # Reset position when song changes.
-        self.__progress_bar.set(0)  # Reset progress bar when song changes.
-        self.play(self.__activate_now)
+        self.active_now += 1
+        if self.active_now >= len(self.audio_files):
+            self.active_now = 0
+        self.position = 0
+        self.progress_bar.set(0)
+        self.play(self.active_now)
         self.update_image()
         self.update_song_title()
-
-    def prev(self) -> None:
-        self.__play_status = False
+    
+    def previous(self) -> None:
+        self.playing = False
         pygame.mixer.music.stop()
-        self.__activate_now -= 1
-        if self.__activate_now < 0:
-            self.__activate_now = len(self.__pathMp3Dict) - 1
-        self.__position = 0  # Reset position when song changes.
-        self.__progress_bar.set(0)  # Reset progress bar when song changes.
-        self.play(self.__activate_now)
+        self.active_now -= 1
+        if self.active_now < 0:
+            self.active_now = len(self.audio_files) - 1
+        self.position = 0
+        self.progress_bar.set(0)
+        self.play(self.active_now)
         self.update_image()
         self.update_song_title()
-
+    
     def update_image(self) -> None:
-        song_key = list(self.__pathMp3Dict.keys())[self.__activate_now]
-        image_path = f"./music/{song_key}.png"
+        song_key = self.audio_files[self.active_now]
+        image_path = f"{song_key}.jpg"
 
-        if os.path.isfile(image_path):
+        if os.path.exists(image_path):
             image = Image.open(image_path)
-            image = image.resize((50, 50), Image.ANTIALIAS)
-            self.__song_image = ImageTk.PhotoImage(image)
+            image = image.resize((300, 300))
+            self.song_image = ImageTk.PhotoImage(image)
         else:
-            # Creates a blank image as a placeholder.
-            blank_image = Image.new("RGB", (30, 30), color="white")
-            self.__song_image = ImageTk.PhotoImage(blank_image)
-        self.__song_image_label.configure(image=self.__song_image)
-        self.__song_image_label.image = self.__song_image
-
+            blank_image = Image.new("RGB", color="white")
+            self.song_image = ImageTk.PhotoImage(blank_image)
+        self.song_image_label.configure(image=self.song_image)
+        self.song_image_label.image = self.song_image
+    
     def update_song_title(self) -> None:
-        song_key = list(self.__pathMp3Dict.keys())[self.__activate_now]
+        song_key = self.audio_files[self.active_now]
         song_title = os.path.splitext(song_key)[0]
-        self.__song_title_label.configure(text=song_title)
-
+        self.song_label.configure(text=song_title)
 
 if __name__ == "__main__":
-    root = customtkinter.CTk()
-    root.geometry("528x119")
-    music_player = MusicPlayer(root)
-    music_player.pack()
-
-    root.mainloop()
+    app = music()
+    app.mainloop()

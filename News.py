@@ -1,152 +1,92 @@
 import requests
-import tkinter as tk
-import customtkinter as ctk
+import customtkinter
 from PIL import Image, ImageTk
 from io import BytesIO
-from bs4 import BeautifulSoup
 import webbrowser
 
-# Modes: "System" (standard), "Dark", "Light"
-ctk.set_appearance_mode("dark")
-# Themes: "blue" (standard), "green", "dark-blue"
-ctk.set_default_color_theme("blue")
+
+API_KEY = "7a22878f03004754ae372da20448d5e9"
+golbal_image = None
 
 
-class NewsWidget(ctk.CTkFrame):
-    def __init__(self, parent, api_key, bg_color="transparent"):
-        super().__init__(parent, bg_color=bg_color)
-        self.api_key = api_key
-        self.articles = self.fetch_news()
-        self.current_article_index = 0
+class news(customtkinter.CTkToplevel):  # CTk για να το τρέξω έξω απο το main.py.
+    def __init__(self):
+        global golbal_image
+        super().__init__()
+        self.geometry("960x480")
+        customtkinter.set_default_color_theme("blue")
+        customtkinter.set_appearance_mode("dark")
+        self.title("News")
+        self.lift()
+        self.attributes("-topmost", True)
+        self.after_idle(self.attributes, "-topmost", False)
+        self.focus_set()
 
-        self.create_widgets()
+        title_label = customtkinter.CTkLabel(self, text="News", font=("TimeBurner", 35))
+        title_label.grid(row=0, column=0, sticky="nsew")
 
-    def create_widgets(self):
-        # Add Next and Previous buttons
-        self.button_frame = ctk.CTkFrame(self)
-        self.button_frame.pack(side="bottom", pady=0, fill="both")
-        prev_button = ctk.CTkButton(
-            self.button_frame, text="Previous", command=self.previous_article, width=80
+        self.columnconfigure(0, weight=1)
+
+        self.rowconfigure(0, weight=1)
+        self.rowconfigure(1, weight=1)
+        self.rowconfigure(2, weight=50)
+        self.rowconfigure(3, weight=1)
+        self.rowconfigure(4, weight=1)
+
+        self.articles = self.get_news()
+
+        image_url = self.articles["urlToImage"]
+        image_data = requests.get(image_url).content
+        image1 = Image.open(BytesIO(image_data))
+        global_image = ImageTk.PhotoImage(image1)
+        self.image_label = customtkinter.CTkLabel(self, text="", image=global_image)
+        self.image_label.grid(
+            row=2, column=0, rowspan=5, sticky="nsew", padx=10, pady=10
         )
-        prev_button.pack(side="left", padx=(0, 0), anchor="s")
-        next_button = ctk.CTkButton(
-            self.button_frame, text="Next", command=self.next_article, width=80
-        )
-        next_button.pack(side="right", padx=(0, 0), anchor="s")
 
-        # Add hyperlink to original article
-        link_label = ctk.CTkLabel(
-            self.button_frame,
+        title = self.articles["title"]
+        self.title_label = customtkinter.CTkLabel(
+            self, text=title, font=("TimeBurner", 17)
+        )
+        self.title_label.grid(row=1, column=0, sticky="s")
+
+        if self.articles["content"] is None:
+            self.articles["content"] = ""
+        # Getting only the first line of code to display, and if the window is fullscreen print the first paragraph.
+        content_lines = (
+            self.articles["content"].split("\n") if title is not None else [""]
+        )
+        first_line = "\n".join(content_lines[:2])
+
+        text_label = customtkinter.CTkLabel(
+            self,
+            text=first_line,
+            justify="center",
+            wraplength=500,
+        )
+        text_label.grid(row=3, column=0, sticky="nsew")
+
+        self.link_label = customtkinter.CTkLabel(
+            self,
             text="Read More...",
             cursor="hand2",
             font=("Arial bold", 14),
             text_color="#6da1ca",
         )
-        link_label.bind(
+        self.link_label.bind(
             "<Button-1>",
-            lambda e: webbrowser.open_new(
-                self.articles[self.current_article_index]["url"]
-            ),
+            lambda e: webbrowser.open_new(self.articles["url"]),
         )
-        link_label.pack(side="bottom", pady=0, anchor="s")
+        self.link_label.grid(row=4, column=0, sticky="nsew")
 
-        # Display current article.
-        self.display_article()
-
-    def display_article(self):
-        article = self.articles[self.current_article_index]
-
-        # Display article image.
-        image_url = article["urlToImage"]
-        if image_url:  # Check if the URL is not None or empty.
-            try:
-                image_data = requests.get(image_url).content
-                image = Image.open(BytesIO(image_data))
-                image = image.resize((500, 400), Image.ANTIALIAS)
-                photo = ImageTk.PhotoImage(image)
-                image_label = ctk.CTkLabel(self, text="", image=photo)
-                # Keep a reference to the image to prevent garbage collection.
-                image_label.image = photo
-                image_label.pack(side="top", pady=(0, 0))
-            except requests.exceptions.RequestException as e:
-                print(f"Could not download image from URL: {image_url}")
-                print(e)
-            except IOError:
-                print(f"Cannot open image from URL: {image_url}")
-
-        # Determine text color based on theme
-        appearance_mode = ctk.get_appearance_mode()
-
-        if appearance_mode == "Dark":
-            # Text color.
-            # text_cl = "#6da1ca"
-            # Text background.
-            # text_fg = "#333333"
-            # Display article text.
-            # text_bg = "#3c3c3c"
-            text_font = ("Arial", 18)
-            title = article["title"]
-        else:  # Light theme
-            text_cl = "#000000"
-            # text_fg = "#999999"
-            # text_bg = "#3c3c3c"
-            text_font = ("Arial", 18)
-            title = article["title"]
-
-        # Getting only the first line of code to display, and if the window is fullscreen print the first paragraph.
-        content_lines = article["content"].split("\n") if title is not None else [""]
-        first_line = "\n".join(content_lines[:2])
-        text = title + "\n\n" + first_line
-
-        text_label = ctk.CTkLabel(
-            self,
-            text=text,
-            # text_color=text_cl,
-            font=text_font,
-            # text_bg,
-            # fg_color=text_fg,
-            justify="center",
-            wraplength=400,
-        )
-        text_label.pack(side="top", padx=0, pady=(20, 0))
-
-    def fetch_news(self):
-        url = f"https://newsapi.org/v2/top-headlines?country=us&apiKey={self.api_key}"
+    def get_news(self):
+        url = f"https://newsapi.org/v2/top-headlines?country=us&apiKey={API_KEY}"
         response = requests.get(url)
         data = response.json()
         articles = data["articles"]
-        return articles[:5]  # Display only the top 5 articles
+        return articles[-1]
 
-    def next_article(self):
-        self.current_article_index = (self.current_article_index + 1) % len(
-            self.articles
-        )
-        self.clear_widgets()
-        self.display_article()
-
-    def previous_article(self):
-        self.current_article_index = (self.current_article_index - 1) % len(
-            self.articles
-        )
-        self.clear_widgets()
-        self.display_article()
-
-    def clear_widgets(self):
-        for widget in self.winfo_children():
-            if widget != self.button_frame:
-                widget.destroy()
-
-
-# API key.
-API_KEY = "46f1942a35684436a2eaa05b27fd06d8"
 
 if __name__ == "__main__":
-    app = ctk.CTk()
-    app.title("News Widget Example")
-    app.geometry("400x660")
-    news_widget = NewsWidget(app, API_KEY)
-    news_widget.pack(fill="both", expand=True)
+    app = news()
     app.mainloop()
-
-
-# API_KEY = "46f1942a35684436a2eaa05b27fd06d8"

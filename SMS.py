@@ -5,40 +5,29 @@ import customtkinter
 from customtkinter import *
 from PIL import ImageTk, Image
 
-# Modes: "System" (standard), "Dark", "Light"
-customtkinter.set_appearance_mode("dark")
-# Themes: "blue" (standard), "green", "dark-blue"
-customtkinter.set_default_color_theme("blue")
 
-class SMS(customtkinter.CTk):    
+class sms(customtkinter.CTkToplevel):  # CTk για να το τρέξω έξω απο το main.py.
     def __init__(self):
         super().__init__()
-        
-        # Configure window
+        self.geometry("460x900")
+        self.resizable(False, False)
+        customtkinter.set_default_color_theme("blue")
+        customtkinter.set_appearance_mode("dark")
         self.title("SMS")
-        self.geometry(f"{400}x{600}")
+        self.lift()
+        self.attributes("-topmost", True)
+        self.after_idle(self.attributes, "-topmost", False)
+        self.focus_set()
 
-        # Load image
-        image = Image.open("Resources-img/SMS.png")
-        image = image.resize((400, 600), Image.ANTIALIAS)
+        image = Image.open("sms.jpg")
+        image = image.resize((460, 900), Image.ANTIALIAS)
         photo = ImageTk.PhotoImage(image)
 
-        # Create label with the image
-        label = Label(self, image=photo)
+        label = customtkinter.CTkLabel(self, image=photo)
         label.image = photo
-        label.place(x=0, y=0, relwidth=1, relheight=1)
+        label.grid(row=0, column=0, columnspan=3, sticky="nsew")
 
-        # Adjust label size to fit window
-        label.bind("<Configure>", lambda event: self.resize_image(event, label, image))
-
-    def resize_image(self, event, label, image):
-        new_width = event.width
-        new_height = event.height
-        resized_image = image.resize((new_width, new_height), Image.ANTIALIAS)
-        new_photo = ImageTk.PhotoImage(resized_image)
-        label.configure(image=new_photo)
-        label.image = new_photo
 
 if __name__ == "__main__":
-    app = SMS()
+    app = sms()
     app.mainloop()

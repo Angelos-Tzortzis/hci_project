@@ -1,35 +1,38 @@
-import requests
-import folium
-import webbrowser
-# from tkinter import *
+import tkinter
+import customtkinter
+from tkintermapview import TkinterMapView
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
 from PIL import Image
 import os
-import threading
-import customtkinter as ctk
 import time
+from PIL import ImageTk, Image
 
 
-def create_weather():
+class weather(customtkinter.CTkToplevel):  # CTk για να το τρέξω έξω απο το main.py.
+    def __init__(self):
+        super().__init__()
+        self.geometry("1080x575")
+        self.resizable(False, False)
+        customtkinter.set_default_color_theme("blue")
+        customtkinter.set_appearance_mode("dark")
+        self.title("Weather")
+        self.lift()
+        self.attributes("-topmost", True)
+        self.after_idle(self.attributes, "-topmost", False)
+        self.focus_set()
 
-    chrome_options = Options()
-    chrome_options.add_argument("--headless")
-    driver = webdriver.Chrome(options=chrome_options)
+        image = Image.open("weather.png")
+        image = image.resize((1080, 575), Image.ANTIALIAS)
+        photo = ImageTk.PhotoImage(image)
 
-    driver.get("file://" + os.path.abspath("weather.html"))
-    time.sleep(1)
-    driver.set_window_size(1920, 1080)
-    # time.sleep(5)
-    driver.save_screenshot("images/weather.png")
-    # time.sleep(5)
-    driver.quit()
+        label = customtkinter.CTkLabel(self, image=photo)
+        label.image = photo
+        label.grid(row=0, column=0, columnspan=3, sticky="nsew")
 
-    image = Image.open("images/weather.png")
-    image = image.crop((10, 10, image.width - 1500, image.height - 953))
-    # image = image.resize(1920, 1080)
 
-    # Αποθήκευση της εικόνας σε μορφή JPEG
-    print("Saving image as PNG...")
-    image.save("images/weather.png", "PNG")
-    print("Image saved as weather.PNG")
+if __name__ == "__main__":
+    app = weather()
+    app.mainloop()
